@@ -6,14 +6,18 @@ module LinkedResearchMetadata
     class Dataset < Base
 
       # @param config [Hash]
+      # @option config [String] :url The URL of the Pure host.
+      # @option config [String] :username The username of the Pure host account.
+      # @option config [String] :password The password of the Pure host account.
+      # @option config [String] :minting_uri The URI at which to mint the resource.
       def initialize(config)
         super
       end
 
-      # For a given uuid, fetch the metadata and transform it into an RDF graph
+      # Dataset transformation
       #
-      # @param uuid [String] uuid of dataset
-      # @return [RDF::Graph] dataset as an RDF graph
+      # @param uuid [String]
+      # @return [RDF::Graph]
       def transform(uuid:)
         dataset_extractor = Puree::Extractor::Dataset.new @config
         @resource = dataset_extractor.find uuid: uuid
