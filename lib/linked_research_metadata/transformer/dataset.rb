@@ -1,12 +1,13 @@
 module LinkedResearchMetadata
   module Transformer
-    class Dataset
+
+    # Dataset transformer
+    #
+    class Dataset < Base
 
       # @param config [Hash]
       def initialize(config)
-        @config = config
-        raise 'Minting URI missing' if @config[:minting_uri].empty?
-        @graph = RDF::Graph.new
+        super
       end
 
       # For a given uuid, fetch the metadata and transform it into an RDF graph
@@ -15,10 +16,10 @@ module LinkedResearchMetadata
       # @return [RDF::Graph] dataset as an RDF graph
       def transform(uuid:)
         dataset_extractor = Puree::Extractor::Dataset.new @config
-        @dataset = dataset_extractor.find uuid: uuid
-        raise 'No metadata for ' + uuid if !@dataset
+        @resource = dataset_extractor.find uuid: uuid
+        raise 'No metadata for ' + uuid if !@resource
         dataset_uri = mint_uri uuid, :dataset
-        @dataset_uri = RDF::URI.new dataset_uri
+        @resource_uri = RDF::URI.new dataset_uri
         build_graph
         @graph
       end
@@ -26,41 +27,41 @@ module LinkedResearchMetadata
       private
 
       def available
-        object = @dataset.available
+        object = @resource.available
         if object
           object_literal = RDF::Literal.new(object.strftime("%F"), datatype: RDF::XSD.date)
-          @graph << [ @dataset_uri, RDF::Vocab::DC.available, object_literal ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.available, object_literal ]
         end
       end
 
       def created
-        object =  @dataset.created
+        object =  @resource.created
         if object
           object_literal = RDF::Literal.new(object.strftime("%F"), datatype: RDF::XSD.date)
-          @graph << [ @dataset_uri, RDF::Vocab::DC.created, object_literal ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.created, object_literal ]
         end
       end
 
       def doi
-        if @dataset.doi
-          doi_uri = RDF::URI.new @dataset.doi
+        if @resource.doi
+          doi_uri = RDF::URI.new @resource.doi
           doi_predicate_uri = RDF::Vocab::OWL.sameAs
-          @graph << [ @dataset_uri, doi_predicate_uri, doi_uri ]
+          @graph << [ @resource_uri, doi_predicate_uri, doi_uri ]
         end
       end
 
       def description
-        object = @dataset.description
+        object = @resource.description
         if object
-          @graph << [ @dataset_uri, RDF::Vocab::DC.description, object ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.description, object ]
         end
       end
 
       def files
-        @dataset.files.each do |i|
+        @resource.files.each do |i|
           file_uri = RDF::URI.new mint_uri(SecureRandom.uuid, :file)
 
-          @graph << [ @dataset_uri, RDF::Vocab::DC.hasPart, file_uri ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.hasPart, file_uri ]
 
           # license
           if i.license && i.license.url
@@ -80,21 +81,9 @@ module LinkedResearchMetadata
       end
 
       def keywords
-        @dataset.keywords.each do |i|
-          @graph << [ @dataset_uri, RDF::Vocab::DC.subject, i ]
+        @resource.keywords.each do |i|
+          @graph << [ @resource_uri, RDF::Vocab::DC.subject, i ]
         end
-      end
-
-      def mint_uri(uuid, resource)
-        uri_resource_map = {
-            dataset: 'datasets',
-            file: 'files',
-            organisation: 'organisations',
-            person: 'people',
-            project: 'projects',
-            publication: 'publications'
-        }
-        File.join @config[:minting_uri], uri_resource_map[resource], uuid
       end
 
       def person(person_uri, uuid, name)
@@ -117,22 +106,22 @@ module LinkedResearchMetadata
       end
 
       def projects
-        @dataset.projects.each do |i|
+        @resource.projects.each do |i|
           project_uri = RDF::URI.new mint_uri(i.uuid, :project)
-          @graph << [ @dataset_uri, RDF::Vocab::DC.relation, project_uri ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.relation, project_uri ]
           @graph << [ project_uri, RDF::Vocab::RDFS.label, i.title ]
           @graph << [ project_uri, RDF.type, RDF::Vocab::FOAF.Project ]
         end
       end
 
       def publications
-        @dataset.publications.each do |i|
+        @resource.publications.each do |i|
           if i.type == 'Dataset'
             publication_uri = RDF::URI.new mint_uri(i.uuid, :dataset)
           else
             publication_uri = RDF::URI.new mint_uri(i.uuid, :publication)
           end
-          @graph << [ @dataset_uri, RDF::Vocab::DC.relation, publication_uri ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.relation, publication_uri ]
           @graph << [ publication_uri, RDF::Vocab::RDFS.label, i.title ]
           # type
           # @graph << [ publication_uri, RDF.type, ??? ]
@@ -145,9 +134,9 @@ module LinkedResearchMetadata
 
       def roles
         all_persons = []
-        all_persons << @dataset.persons_internal
-        all_persons << @dataset.persons_external
-        all_persons << @dataset.persons_other
+        all_persons << @resource.persons_internal
+        all_persons << @resource.persons_external
+        all_persons << @resource.persons_other
         all_persons.each do |person_type|
           person_type.each do |i|
             name = i.name.first_last
@@ -158,11 +147,11 @@ module LinkedResearchMetadata
             end
             person_uri = RDF::URI.new mint_uri(uuid, :person)
             if i.role == 'Creator'
-              @graph << [ @dataset_uri, RDF::Vocab::DC.creator, person_uri ]
+              @graph << [ @resource_uri, RDF::Vocab::DC.creator, person_uri ]
               person person_uri, uuid, name
             end
             if i.role == 'Contributor'
-              @graph << [ @dataset_uri, RDF::Vocab::DC.contributor, person_uri ]
+              @graph << [ @resource_uri, RDF::Vocab::DC.contributor, person_uri ]
               person person_uri, uuid, name
             end
           end
@@ -171,13 +160,13 @@ module LinkedResearchMetadata
       end
 
       def spatial
-        @dataset.spatial_places.each do |i|
-          @graph << [ @dataset_uri, RDF::Vocab::DC.spatial, i ]
+        @resource.spatial_places.each do |i|
+          @graph << [ @resource_uri, RDF::Vocab::DC.spatial, i ]
         end
       end
 
       def temporal
-        t = @dataset.temporal
+        t = @resource.temporal
         temporal_range = ''
         if t
           if t.start
@@ -187,15 +176,15 @@ module LinkedResearchMetadata
               temporal_range << t.end.strftime("%F")
             end
             object = temporal_range
-            @graph << [ @dataset_uri, RDF::Vocab::DC.temporal, object ]
+            @graph << [ @resource_uri, RDF::Vocab::DC.temporal, object ]
           end
         end
       end
 
       def title
-        object = @dataset.title
+        object = @resource.title
         if object
-          @graph << [ @dataset_uri, RDF::Vocab::DC.title, object ]
+          @graph << [ @resource_uri, RDF::Vocab::DC.title, object ]
         end
       end
 

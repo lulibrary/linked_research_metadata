@@ -1,5 +1,6 @@
 require 'puree'
 require 'linkeddata'
+require 'linked_research_metadata/transformer/base'
 require 'linked_research_metadata/transformer/dataset'
 require 'linked_research_metadata/version'
 

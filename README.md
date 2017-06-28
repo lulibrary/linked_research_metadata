@@ -45,7 +45,7 @@ config = {
 Create a metadata transformer for a Pure dataset.
 
 ```ruby
-transformer = ResearchMetadata::Transformer::Dataset.new config
+transformer = LinkedResearchMetadata::Transformer::Dataset.new config
 ```
 
 Give it a Pure identifier...
