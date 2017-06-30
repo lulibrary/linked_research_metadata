@@ -9,7 +9,7 @@ module LinkedResearchMetadata
       # @option config [String] :url The URL of the Pure host.
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
-      # @option config [String] :minting_uri The URI at which to mint the resource.
+      # @option config [String] :minting_uri The URI at which to mint a resource.
       def initialize(config)
         super
       end
@@ -30,6 +30,10 @@ module LinkedResearchMetadata
 
       private
 
+      def meta
+        @graph << [ @resource_uri, RDF.type, "#{vocab(:vivo)}Dataset" ]
+      end
+
       def available
         object = @resource.available
         if object
@@ -49,7 +53,7 @@ module LinkedResearchMetadata
       def doi
         if @resource.doi
           doi_uri = RDF::URI.new @resource.doi
-          doi_predicate_uri = RDF::Vocab::OWL.sameAs
+          doi_predicate_uri = RDF::Vocab::DC.identifier
           @graph << [ @resource_uri, doi_predicate_uri, doi_uri ]
         end
       end
@@ -77,10 +81,14 @@ module LinkedResearchMetadata
           @graph << [ file_uri, RDF::Vocab::DC.format, i.mime ]
 
           # size
-          @graph << [ file_uri, RDF::Vocab::DC.extent, i.size ]
+          size_predicate = RDF::Vocab::DC.extent
+          @graph << [ file_uri, size_predicate, i.size ]
 
           #name
-          @graph << [ file_uri, RDF::Vocab::RDFS.label, i.name ]
+          @graph << [ file_uri, RDF::Vocab::DC.title, i.name ]
+
+          #type
+          @graph << [ file_uri, RDF.type, RDF::Vocab::PREMIS.File ]
         end
       end
 
@@ -99,11 +107,12 @@ module LinkedResearchMetadata
           person.affiliations.each do |i|
             organisation_uri = RDF::URI.new mint_uri(i.uuid, :organisation)
             @graph << [ person_uri, RDF::Vocab::MADS.hasAffiliation, organisation_uri ]
-            @graph << [ organisation_uri, RDF::Vocab::RDFS.label, i.name ]
+            @graph << [ organisation_uri, RDF::Vocab::DC.title, i.name ]
+            @graph << [ organisation_uri, RDF.type, RDF::Vocab::FOAF.Organization ]
           end
           if person.orcid
             orcid_uri = RDF::URI.new "http://orcid.org/#{person.orcid}"
-            orcid_predicate_uri = RDF::Vocab::OWL.sameAs
+            orcid_predicate_uri = RDF::URI.new "#{vocab(:vivo)}OrcidId"
             @graph << [ person_uri, orcid_predicate_uri, orcid_uri ]
           end
         end
@@ -113,8 +122,8 @@ module LinkedResearchMetadata
         @resource.projects.each do |i|
           project_uri = RDF::URI.new mint_uri(i.uuid, :project)
           @graph << [ @resource_uri, RDF::Vocab::DC.relation, project_uri ]
-          @graph << [ project_uri, RDF::Vocab::RDFS.label, i.title ]
-          @graph << [ project_uri, RDF.type, RDF::Vocab::FOAF.Project ]
+          @graph << [ project_uri, RDF::Vocab::DC.title, i.title ]
+          @graph << [ project_uri, RDF.type, "#{vocab(:vivo)}Project" ]
         end
       end
 
@@ -122,13 +131,13 @@ module LinkedResearchMetadata
         @resource.publications.each do |i|
           if i.type == 'Dataset'
             publication_uri = RDF::URI.new mint_uri(i.uuid, :dataset)
+            @graph << [ publication_uri, RDF.type, "#{vocab(:vivo)}Dataset" ]
           else
             publication_uri = RDF::URI.new mint_uri(i.uuid, :publication)
+            @graph << [ publication_uri, RDF.type, "#{vocab(:swpo)}Publication" ]
           end
           @graph << [ @resource_uri, RDF::Vocab::DC.relation, publication_uri ]
-          @graph << [ publication_uri, RDF::Vocab::RDFS.label, i.title ]
-          # type
-          # @graph << [ publication_uri, RDF.type, ??? ]
+          @graph << [ publication_uri, RDF::Vocab::DC.title, i.title ]
         end
       end
 
@@ -193,6 +202,7 @@ module LinkedResearchMetadata
       end
 
       def build_graph
+        meta
         available
         created
         description
