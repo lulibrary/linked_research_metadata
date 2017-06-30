@@ -2,6 +2,12 @@
 
 Metadata extraction from the Pure Research Information System and transformation of the metadata into RDF.
 
+## Status
+
+[![Gem Version](https://badge.fury.io/rb/linked_research_metadata.svg)](https://badge.fury.io/rb/linked_research_metadata)
+[![Build Status](https://semaphoreci.com/api/v1/aalbinclark/linked_research_metadata/branches/master/badge.svg)](https://semaphoreci.com/aalbinclark/linked_research_metadata)
+[![Code Climate](https://codeclimate.com/github/lulibrary/linked_research_metadata/badges/gpa.svg)](https://codeclimate.com/github/lulibrary/linked_research_metadata)
+
 ## Installation
 
 Add this line to your application's Gemfile:
