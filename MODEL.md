@@ -1,4 +1,5 @@
 # Data Model
+Version 0.1.0
 
 ## Prefixes
 Prefix | URI
