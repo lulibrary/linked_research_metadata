@@ -31,14 +31,14 @@ module LinkedResearchMetadata
       private
 
       def meta
-        @graph << [ @resource_uri, RDF.type, "#{vocab(:vivo)}Dataset" ]
+        add_triple @resource_uri, RDF.type, "#{vocab(:vivo)}Dataset"
       end
 
       def available
         object = @resource.available
         if object
           object_literal = RDF::Literal.new(object.strftime("%F"), datatype: RDF::XSD.date)
-          @graph << [ @resource_uri, RDF::Vocab::DC.available, object_literal ]
+          add_triple @resource_uri, RDF::Vocab::DC.available, object_literal
         end
       end
 
@@ -46,7 +46,7 @@ module LinkedResearchMetadata
         object =  @resource.created
         if object
           object_literal = RDF::Literal.new(object.strftime("%F"), datatype: RDF::XSD.date)
-          @graph << [ @resource_uri, RDF::Vocab::DC.created, object_literal ]
+          add_triple @resource_uri, RDF::Vocab::DC.created, object_literal
         end
       end
 
@@ -54,14 +54,14 @@ module LinkedResearchMetadata
         if @resource.doi
           doi_uri = RDF::URI.new @resource.doi
           doi_predicate_uri = RDF::Vocab::DC.identifier
-          @graph << [ @resource_uri, doi_predicate_uri, doi_uri ]
+          add_triple @resource_uri, doi_predicate_uri, doi_uri
         end
       end
 
       def description
         object = @resource.description
         if object
-          @graph << [ @resource_uri, RDF::Vocab::DC.description, object ]
+          add_triple @resource_uri, RDF::Vocab::DC.description, object
         end
       end
 
@@ -69,51 +69,51 @@ module LinkedResearchMetadata
         @resource.files.each do |i|
           file_uri = RDF::URI.new mint_uri(SecureRandom.uuid, :file)
 
-          @graph << [ @resource_uri, RDF::Vocab::DC.hasPart, file_uri ]
+          add_triple @resource_uri, RDF::Vocab::DC.hasPart, file_uri
 
           # license
           if i.license && i.license.url
               uri = RDF::URI.new i.license.url
-              @graph << [ file_uri, RDF::Vocab::DC.license, uri ]
+              add_triple file_uri, RDF::Vocab::DC.license, uri
           end
 
           # mime
-          @graph << [ file_uri, RDF::Vocab::DC.format, i.mime ]
+          add_triple file_uri, RDF::Vocab::DC.format, i.mime
 
           # size
           size_predicate = RDF::Vocab::DC.extent
-          @graph << [ file_uri, size_predicate, i.size ]
+          add_triple file_uri, size_predicate, i.size
 
           #name
-          @graph << [ file_uri, RDF::Vocab::DC.title, i.name ]
+          add_triple file_uri, RDF::Vocab::DC.title, i.name
 
           #type
-          @graph << [ file_uri, RDF.type, RDF::Vocab::PREMIS.File ]
+          add_triple file_uri, RDF.type, RDF::Vocab::PREMIS.File
         end
       end
 
       def keywords
         @resource.keywords.each do |i|
-          @graph << [ @resource_uri, RDF::Vocab::DC.subject, i ]
+          add_triple @resource_uri, RDF::Vocab::DC.subject, i
         end
       end
 
       def person(person_uri, uuid, name)
-        @graph << [ person_uri, RDF.type, RDF::Vocab::FOAF.Person ]
-        @graph << [ person_uri, RDF::Vocab::FOAF.name, name ]
+        add_triple person_uri, RDF.type, RDF::Vocab::FOAF.Person
+        add_triple person_uri, RDF::Vocab::FOAF.name, name
         person_extractor = Puree::Extractor::Person.new @config
         person = person_extractor.find uuid: uuid
         if person
           person.affiliations.each do |i|
             organisation_uri = RDF::URI.new mint_uri(i.uuid, :organisation)
-            @graph << [ person_uri, RDF::Vocab::MADS.hasAffiliation, organisation_uri ]
-            @graph << [ organisation_uri, RDF::Vocab::DC.title, i.name ]
-            @graph << [ organisation_uri, RDF.type, RDF::Vocab::FOAF.Organization ]
+            add_triple person_uri, RDF::Vocab::MADS.hasAffiliation, organisation_uri
+            add_triple organisation_uri, RDF::Vocab::DC.title, i.name
+            add_triple organisation_uri, RDF.type, RDF::Vocab::FOAF.Organization
           end
           if person.orcid
             orcid_uri = RDF::URI.new "http://orcid.org/#{person.orcid}"
             orcid_predicate_uri = RDF::URI.new "#{vocab(:vivo)}OrcidId"
-            @graph << [ person_uri, orcid_predicate_uri, orcid_uri ]
+            add_triple person_uri, orcid_predicate_uri, orcid_uri
           end
         end
       end
@@ -121,9 +121,9 @@ module LinkedResearchMetadata
       def projects
         @resource.projects.each do |i|
           project_uri = RDF::URI.new mint_uri(i.uuid, :project)
-          @graph << [ @resource_uri, RDF::Vocab::DC.relation, project_uri ]
-          @graph << [ project_uri, RDF::Vocab::DC.title, i.title ]
-          @graph << [ project_uri, RDF.type, "#{vocab(:vivo)}Project" ]
+          add_triple @resource_uri, RDF::Vocab::DC.relation, project_uri
+          add_triple project_uri, RDF::Vocab::DC.title, i.title
+          add_triple project_uri, RDF.type, "#{vocab(:vivo)}Project"
         end
       end
 
@@ -131,13 +131,13 @@ module LinkedResearchMetadata
         @resource.publications.each do |i|
           if i.type == 'Dataset'
             publication_uri = RDF::URI.new mint_uri(i.uuid, :dataset)
-            @graph << [ publication_uri, RDF.type, "#{vocab(:vivo)}Dataset" ]
+            add_triple publication_uri, RDF.type, "#{vocab(:vivo)}Dataset"
           else
             publication_uri = RDF::URI.new mint_uri(i.uuid, :publication)
-            @graph << [ publication_uri, RDF.type, "#{vocab(:swpo)}Publication" ]
+            add_triple publication_uri, RDF.type, "#{vocab(:swpo)}Publication"
           end
-          @graph << [ @resource_uri, RDF::Vocab::DC.relation, publication_uri ]
-          @graph << [ publication_uri, RDF::Vocab::DC.title, i.title ]
+          add_triple @resource_uri, RDF::Vocab::DC.relation, publication_uri
+          add_triple publication_uri, RDF::Vocab::DC.title, i.title
         end
       end
 
@@ -160,11 +160,11 @@ module LinkedResearchMetadata
             end
             person_uri = RDF::URI.new mint_uri(uuid, :person)
             if i.role == 'Creator'
-              @graph << [ @resource_uri, RDF::Vocab::DC.creator, person_uri ]
+              add_triple @resource_uri, RDF::Vocab::DC.creator, person_uri
               person person_uri, uuid, name
             end
             if i.role == 'Contributor'
-              @graph << [ @resource_uri, RDF::Vocab::DC.contributor, person_uri ]
+              add_triple @resource_uri, RDF::Vocab::DC.contributor, person_uri
               person person_uri, uuid, name
             end
           end
@@ -174,7 +174,7 @@ module LinkedResearchMetadata
 
       def spatial
         @resource.spatial_places.each do |i|
-          @graph << [ @resource_uri, RDF::Vocab::DC.spatial, i ]
+          add_triple @resource_uri, RDF::Vocab::DC.spatial, i
         end
       end
 
@@ -189,7 +189,7 @@ module LinkedResearchMetadata
               temporal_range << t.end.strftime("%F")
             end
             object = temporal_range
-            @graph << [ @resource_uri, RDF::Vocab::DC.temporal, object ]
+            add_triple @resource_uri, RDF::Vocab::DC.temporal, object
           end
         end
       end
@@ -197,7 +197,7 @@ module LinkedResearchMetadata
       def title
         object = @resource.title
         if object
-          @graph << [ @resource_uri, RDF::Vocab::DC.title, object ]
+          add_triple @resource_uri, RDF::Vocab::DC.title, object
         end
       end
 

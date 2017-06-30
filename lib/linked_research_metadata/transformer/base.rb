@@ -18,6 +18,10 @@ module LinkedResearchMetadata
 
       private
 
+      def add_triple(subject, predicate, object)
+        @graph << [ subject, predicate, object ]
+      end
+
       def vocab(v)
         vocabulary_map =
         {
