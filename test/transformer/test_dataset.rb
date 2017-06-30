@@ -23,7 +23,6 @@ class TestDatasetTransform < Minitest::Test
     transform
     assert_instance_of RDF::Graph, @graph
     assert @graph.size > 0
-    puts @graph.dump(:ttl)
   end
 
 end
