@@ -4,6 +4,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-## 0.1.0 - 2017-06-28
+## 0.1.0 - 2017-06-30
 ### Added
 - Working product supports datasets.
