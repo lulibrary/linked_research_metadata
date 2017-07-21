@@ -34,7 +34,8 @@ config = {
   url:      ENV['PURE_URL'],
   username: ENV['PURE_USERNAME'],
   password: ENV['PURE_PASSWORD'],
-  minting_uri: 'http://data.example.com'
+  minting_uri: 'http://data.example.com',
+  uri_expansion: true
 }
 ```
 
@@ -42,7 +43,8 @@ config = {
 # Pure host without authentication.
 config = {
   url: ENV['PURE_URL'],
-  minting_uri: 'http://data.example.com'
+  minting_uri: 'http://data.example.com',
+  uri_expansion: true
 }
 ```
 

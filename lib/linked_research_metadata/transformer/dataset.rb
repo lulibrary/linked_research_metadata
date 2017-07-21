@@ -4,12 +4,14 @@ module LinkedResearchMetadata
     # Dataset transformer
     #
     class Dataset < Base
+      include LinkedResearchMetadata::Transformer::Shared
 
       # @param config [Hash]
       # @option config [String] :url The URL of the Pure host.
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
+      # @option config [Boolean] :uri_expansion Expand URI with minimal resource metadata.
       def initialize(config)
         super
       end
@@ -19,20 +21,10 @@ module LinkedResearchMetadata
       # @param uuid [String]
       # @return [RDF::Graph]
       def transform(uuid:)
-        dataset_extractor = Puree::Extractor::Dataset.new @config
-        @resource = dataset_extractor.find uuid: uuid
-        raise 'No metadata for ' + uuid if !@resource
-        dataset_uri = mint_uri uuid, :dataset
-        @resource_uri = RDF::URI.new(dataset_uri)
-        build_graph
-        @graph
+        super uuid: uuid, resource: :dataset
       end
 
       private
-
-      def meta
-        add_triple @resource_uri, RDF.type, RDF::URI.new("#{vocab(:vivo)}Dataset")
-      end
 
       def available
         object = @resource.available
@@ -99,46 +91,26 @@ module LinkedResearchMetadata
         end
       end
 
-      def person(person_uri, uuid, name)
-        add_triple person_uri, RDF.type, RDF::Vocab::FOAF.Person
-        add_triple person_uri, RDF::Vocab::FOAF.name, name
-        person_extractor = Puree::Extractor::Person.new @config
-        person = person_extractor.find uuid: uuid
-        if person
-          person.affiliations.each do |i|
-            organisation_uri = RDF::URI.new(mint_uri(i.uuid, :organisation))
-            add_triple person_uri, RDF::Vocab::MADS.hasAffiliation, organisation_uri
-            add_triple organisation_uri, RDF::Vocab::DC.title, i.name
-            add_triple organisation_uri, RDF.type, RDF::Vocab::FOAF.Organization
-          end
-          if person.orcid
-            orcid_uri = RDF::URI.new("http://orcid.org/#{person.orcid}")
-            orcid_predicate_uri = RDF::URI.new("#{vocab(:vivo)}OrcidId")
-            add_triple person_uri, orcid_predicate_uri, orcid_uri
-          end
-        end
-      end
-
       def projects
         @resource.projects.each do |i|
           project_uri = RDF::URI.new(mint_uri(i.uuid, :project))
+          minimal_project project_uri, i  if @config[:uri_expansion] === true
           add_triple @resource_uri, RDF::Vocab::DC.relation, project_uri
-          add_triple project_uri, RDF::Vocab::DC.title, i.title
-          add_triple project_uri, RDF.type, RDF::URI.new("#{vocab(:vivo)}Project")
+          @links[:project] << i.uuid
         end
       end
 
       def publications
         @resource.publications.each do |i|
           if i.type == 'Dataset'
+            @links[:dataset] << i.uuid
             publication_uri = RDF::URI.new(mint_uri(i.uuid, :dataset))
-            add_triple publication_uri, RDF.type, RDF::URI.new("#{vocab(:vivo)}Dataset")
           else
+            @links[:publication] << i.uuid
             publication_uri = RDF::URI.new(mint_uri(i.uuid, :publication))
-            add_triple publication_uri, RDF.type, RDF::URI.new("#{vocab(:swpo)}Publication")
           end
+          minimal_publication publication_uri, i if @config[:uri_expansion] === true
           add_triple @resource_uri, RDF::Vocab::DC.relation, publication_uri
-          add_triple publication_uri, RDF::Vocab::DC.title, i.title
         end
       end
 
@@ -149,28 +121,28 @@ module LinkedResearchMetadata
       def roles
         all_persons = []
         all_persons << @resource.persons_internal
-        all_persons << @resource.persons_external
+        # all_persons << @resource.persons_external
         all_persons << @resource.persons_other
         all_persons.each do |person_type|
           person_type.each do |i|
-            name = i.name.first_last
             if i.uuid
               uuid = i.uuid
+              @links[:person] << i.uuid
             else
               uuid = SecureRandom.uuid
             end
-            person_uri = RDF::URI.new(mint_uri(uuid, :person))
-            if i.role == 'Creator'
-              add_triple @resource_uri, RDF::Vocab::DC.creator, person_uri
-              person person_uri, uuid, name
-            end
-            if i.role == 'Contributor'
-              add_triple @resource_uri, RDF::Vocab::DC.contributor, person_uri
-              person person_uri, uuid, name
+            if i.name
+              person_uri = RDF::URI.new(mint_uri(uuid, :person))
+              minimal_person(person_uri, i) if @config[:uri_expansion] === true
+              if i.role == 'Creator'
+                add_triple @resource_uri, RDF::Vocab::DC.creator, person_uri
+              end
+              if i.role == 'Contributor'
+                add_triple @resource_uri, RDF::Vocab::DC.contributor, person_uri
+              end
             end
           end
         end
-
       end
 
       def spatial
@@ -202,8 +174,25 @@ module LinkedResearchMetadata
         end
       end
 
+      def type
+        add_triple @resource_uri, RDF.type, RDF::URI.new("#{vocab(:vivo)}Dataset")
+      end
+
+      def show_links
+        puts 'dataset'
+        puts @links
+        puts '----- links to graph person start -------'
+        puts links_to_graph(:person).dump(:turtle)
+        puts '----- links to graph end -------'
+        puts '----- links to graph project start -------'
+        puts links_to_graph(:project).dump(:turtle)
+        puts '----- links to graph end -------'
+        puts '----- links to graph dataset start -------'
+        puts links_to_graph(:dataset).dump(:turtle)
+        puts '----- links to graph end -------'
+      end
+
       def build_graph
-        meta
         available
         created
         description
@@ -217,6 +206,7 @@ module LinkedResearchMetadata
         spatial
         temporal
         title
+        type
       end
 
     end
