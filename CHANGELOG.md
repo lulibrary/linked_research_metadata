@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 0.2.0 - 2017-07-26
+### Added
+- Levels of publishing.
+
 ## 0.1.1 - 2017-07-03
 ### Fixed
 - Strings become URIs for rdf:type.

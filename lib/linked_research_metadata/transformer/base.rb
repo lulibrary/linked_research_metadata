@@ -10,7 +10,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Boolean] :uri_expansion Expand URI with minimal resource metadata.
+      # @option config [Boolean] :resource_expansion Expand URI with minimal resource metadata.
 
       def initialize(config)
         @config = config
@@ -26,6 +26,11 @@ module LinkedResearchMetadata
       end
 
       private
+
+      def make_transformer(resource)
+        resource_class = "LinkedResearchMetadata::Transformer::#{resource.to_s.capitalize}"
+        Object.const_get(resource_class).new @config
+      end
 
       # @param uuid [String]
       # @param resource [Symbol]

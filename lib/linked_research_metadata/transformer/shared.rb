@@ -7,6 +7,14 @@ module LinkedResearchMetadata
 
       private
 
+      def minimal_file(uri, file)
+        #name
+        add_triple uri, RDF::Vocab::DC.title, file.name
+
+        #type
+        add_triple uri, RDF.type, RDF::Vocab::PREMIS.File
+      end
+
       def minimal_organisation(uri, organisation_header)
         add_triple uri, RDF.type, RDF::Vocab::FOAF.Organization
         add_triple uri, RDF::Vocab::DC.title, organisation_header.name

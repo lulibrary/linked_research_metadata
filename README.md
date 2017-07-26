@@ -35,7 +35,7 @@ config = {
   username: ENV['PURE_USERNAME'],
   password: ENV['PURE_PASSWORD'],
   minting_uri: 'http://data.example.com',
-  uri_expansion: true
+  resource_expansion: :min
 }
 ```
 
@@ -44,9 +44,17 @@ config = {
 config = {
   url: ENV['PURE_URL'],
   minting_uri: 'http://data.example.com',
-  uri_expansion: true
+  resource_expansion: :min
 }
 ```
+
+#### Parameters
+**resource_expansion**
+
+Omit - gives resource URI only.
+
++ :min - gives resource URI plus type and title/name from the model metadata.
++ :max - gives resource URI plus all model metadata for a resource.
 
 ### Transformation
 

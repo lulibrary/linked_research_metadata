@@ -21,12 +21,12 @@ Property | Value | Cardinality
 --- | --- | ---
 dcterms:available | xsd:date | 1
 dcterms:created | xsd:date | 1
-dcterms:creator | URI | 1..n
-dcterms:contributor | URI | 0..n
+dcterms:creator | Person URI | 1..n
+dcterms:contributor | Person URI | 0..n
 dcterms:description | Literal (String) | 0..1
-dcterms:hasPart | URI | 0..n
-dcterms:identifier | URI. DOI. | 0..1
-dcterms:relation | URI | 0..n
+dcterms:hasPart | File URI | 0..n
+dcterms:identifier | DOI URI | 0..1
+dcterms:relation | Dataset, Publication URI | 0..n
 dcterms:spatial | Literal (String) | 0..n
 dcterms:subject | Literal (String) | 0..n
 dcterms:temporal | Literal (String). RKMS‐ISO8601 form. | 0..1
@@ -52,7 +52,7 @@ rdf:type | foaf:Organization | 1
 Property | Value | Cardinality
 --- | --- | ---
 foaf:name | Literal (String) | 1
-mads:hasAffiliation | URI | 0..n
+mads:hasAffiliation | Organisation URI | 0..n
 rdf:type | foaf:Person | 1
 vivo:OrcidId | URI | 0..1
 
