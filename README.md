@@ -51,10 +51,12 @@ config = {
 #### Parameters
 **resource_expansion**
 
+Control what metadata is put into the graph.
+
 Omit - gives resource URI only.
 
 + :min - gives resource URI plus type and title/name from the model metadata.
-+ :max - gives resource URI plus all model metadata for a resource.
++ :max - gives resource URI plus all the model metadata for a resource.
 
 ### Transformation
 
@@ -71,3 +73,23 @@ graph = transformer.transform uuid: 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
 ```
 
 ...and get an RDF graph.
+
+#### Some possible strategies
+
+Identifiers (UUIDs) are available after transformation in a hash of sets for
+:dataset, :organisation, :person, :project, and :publication. Organisation is
+only available if the resource_expansion parameter has the value :max.
+
++ Transform a single resource, setting resource_expansion to :min.
+
++ Transform a single resource, omitting resource_expansion parameter. Transform
+other resources using UUIDs from the identifiers hash later, setting
+resource_expansion parameter to :max.
+
++ Transform a single resource, omitting resource_expansion parameter. Repeat,
+combining statements together from subsequent graphs and merging subsequent sets
+of identifiers. Transform other resources using UUIDs from the identifiers hash
+later, setting resource_expansion parameter to :max.
+
++ Transform a single resource, setting resource_expansion parameter to :max.
+Repeat, combining statements together from subsequent graphs into a larger graph.

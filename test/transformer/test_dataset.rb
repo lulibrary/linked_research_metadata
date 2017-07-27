@@ -7,7 +7,8 @@ class TestDatasetTransform < Minitest::Test
       url:      ENV['PURE_URL'],
       username: ENV['PURE_USERNAME'],
       password: ENV['PURE_PASSWORD'],
-      minting_uri: 'http://data.example.com'
+      minting_uri: 'http://data.example.com',
+      resource_expansion: :max
     }
   end
 

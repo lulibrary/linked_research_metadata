@@ -11,7 +11,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Boolean] :resource_expansion Expand URI with minimal resource metadata.
+      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
       def initialize(config)
         super
       end
@@ -94,6 +94,7 @@ module LinkedResearchMetadata
 
       def projects
         @resource.projects.each do |i|
+          @identifiers[:project] << i.uuid
           project_uri = RDF::URI.new(mint_uri(i.uuid, :project))
           minimal_project project_uri, i  if @config[:resource_expansion] === :min
           if @config[:resource_expansion] === :max && 1===2
@@ -102,17 +103,16 @@ module LinkedResearchMetadata
             merge_graph graph if graph
           end
           add_triple @resource_uri, RDF::Vocab::DC.relation, project_uri
-          @links[:project] << i.uuid
         end
       end
 
       def publications
         @resource.publications.each do |i|
           if i.type == 'Dataset'
-            @links[:dataset] << i.uuid
+            @identifiers[:dataset] << i.uuid
             publication_uri = RDF::URI.new(mint_uri(i.uuid, :dataset))
           else
-            @links[:publication] << i.uuid
+            @identifiers[:publication] << i.uuid
             publication_uri = RDF::URI.new(mint_uri(i.uuid, :publication))
           end
           minimal_publication publication_uri, i if @config[:resource_expansion] === :min
@@ -127,23 +127,24 @@ module LinkedResearchMetadata
       def roles
         all_persons = []
         all_persons << @resource.persons_internal
-        # all_persons << @resource.persons_external
+        all_persons << @resource.persons_external
         all_persons << @resource.persons_other
         all_persons.each do |person_type|
           person_type.each do |i|
             if i.uuid
               uuid = i.uuid
-              @links[:person] << i.uuid
+              @identifiers[:person] << i.uuid
             else
               uuid = SecureRandom.uuid
             end
             if i.name
               person_uri = RDF::URI.new(mint_uri(uuid, :person))
               minimal_person(person_uri, i) if @config[:resource_expansion] === :min
-              if @config[:resource_expansion] === :max
+              if i.uuid && @config[:resource_expansion] === :max
                 transformer = make_transformer :person
                 graph = transformer.transform uuid: uuid
                 merge_graph graph if graph
+                merge_identifiers transformer.identifiers
               end
               if i.role == 'Creator'
                 add_triple @resource_uri, RDF::Vocab::DC.creator, person_uri
@@ -187,20 +188,6 @@ module LinkedResearchMetadata
 
       def type
         add_triple @resource_uri, RDF.type, RDF::URI.new("#{vocab(:vivo)}Dataset")
-      end
-
-      def show_links
-        puts 'dataset'
-        puts @links
-        puts '----- links to graph person start -------'
-        puts links_to_graph(:person).dump(:turtle)
-        puts '----- links to graph end -------'
-        puts '----- links to graph project start -------'
-        puts links_to_graph(:project).dump(:turtle)
-        puts '----- links to graph end -------'
-        puts '----- links to graph dataset start -------'
-        puts links_to_graph(:dataset).dump(:turtle)
-        puts '----- links to graph end -------'
       end
 
       def build_graph

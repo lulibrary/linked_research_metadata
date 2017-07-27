@@ -4,9 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-## 0.2.0 - 2017-07-26
+## 0.2.0 - 2017-07-27
 ### Added
 - Levels of publishing.
+- Identifiers available as a hash of sets.
 
 ## 0.1.1 - 2017-07-03
 ### Fixed

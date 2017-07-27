@@ -11,7 +11,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Boolean] :resource_expansion Expand URI with minimal resource metadata.
+      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
       def initialize(config)
         super
       end
@@ -28,7 +28,7 @@ module LinkedResearchMetadata
 
       def affiliations
         @resource.affiliations.each do |i|
-          @links[:organisation] << i.uuid
+          @identifiers[:organisation] << i.uuid
           organisation_uri = RDF::URI.new(mint_uri(i.uuid, :organisation))
           minimal_organisation organisation_uri, i if @config[:resource_expansion] === :min
           if @config[:resource_expansion] === :max
@@ -54,14 +54,6 @@ module LinkedResearchMetadata
 
       def type
         add_triple @resource_uri, RDF.type, RDF::Vocab::FOAF.Person
-      end
-
-      def show_links
-        puts 'person '
-        puts @links
-        puts '----- links to graph organisation start -------'
-        puts links_to_graph(:organisation).dump(:turtle)
-        puts '----- links to graph end -------'
       end
 
       def build_graph

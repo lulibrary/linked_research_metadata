@@ -10,19 +10,27 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Boolean] :resource_expansion Expand URI with minimal resource metadata.
+      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
 
       def initialize(config)
         @config = config
         raise 'Minting URI missing' if @config[:minting_uri].empty?
         @graph = RDF::Graph.new
-        @links = {
-            dataset: [],
-            organisation: [],
-            person: [],
-            project: [],
-            publication: []
+        @identifiers = {
+            dataset: Set.new,
+            organisation: Set.new,
+            person: Set.new,
+            project: Set.new,
+            publication: Set.new
         }
+      end
+
+      # Pure UUIDs available after transformation for :dataset, :organisation,
+      # :person, :project, :publication.
+      #
+      # @return [Hash{Symbol => Set<String>}]
+      def identifiers
+        @identifiers
       end
 
       private
@@ -50,6 +58,10 @@ module LinkedResearchMetadata
         graph.each { |i| @graph << i }
       end
 
+      def merge_identifiers(identifiers)
+        @identifiers.each { |k,v| v.merge identifiers[k] }
+      end
+
       def add_triple(subject, predicate, object)
         @graph << [ subject, predicate, object ]
       end
@@ -75,17 +87,17 @@ module LinkedResearchMetadata
         File.join @config[:minting_uri], uri_resource_map[resource], uuid
       end
 
-      def links_to_graph(resource)
+      def identifiers_to_graph(resource)
         graph = RDF::Graph.new
-        @links[resource].each do |i|
-          links_graph = RDF::Graph.new
-          klass = "LinkedResearchMetadata::Transformer::#{resource.to_s.capitalize}"
-          transformer =  Object.const_get(klass).new @config
+        @identifiers[resource].each do |i|
+          identifiers_graph = RDF::Graph.new
+          transformer = make_transformer resource
           graph = transformer.transform uuid: i
-          links_graph.each { |i| graph << i }
+          identifiers_graph.each { |i| graph << i }
         end
         graph
       end
+
 
     end
   end
