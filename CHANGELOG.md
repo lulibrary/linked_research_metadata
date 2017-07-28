@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 0.2.0 - 2017-07-28
+### Added
+- Granularity control for associated resource URIs.
+- Identifiers available as a hash of sets.
+
 ## 0.1.1 - 2017-07-03
 ### Fixed
 - Strings become URIs for rdf:type.
