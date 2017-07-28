@@ -8,7 +8,7 @@ class TestDatasetTransform < Minitest::Test
       username: ENV['PURE_USERNAME'],
       password: ENV['PURE_PASSWORD'],
       minting_uri: 'http://data.example.com',
-      resource_expansion: :max
+      granularity: 2
     }
   end
 

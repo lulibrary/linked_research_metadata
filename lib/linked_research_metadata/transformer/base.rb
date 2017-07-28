@@ -10,10 +10,11 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
+      # @option config [Fixnum] :granularity Expand associated resource URIs with varying amounts of metadata.
 
       def initialize(config)
         @config = config
+        @config[:granularity] = 0 if !@config[:granularity]
         raise 'Minting URI missing' if @config[:minting_uri].empty?
         @graph = RDF::Graph.new
         @identifiers = {
@@ -47,10 +48,11 @@ module LinkedResearchMetadata
         resource_class = "Puree::Extractor::#{resource.to_s.capitalize}"
         resource_extractor = Object.const_get(resource_class).new @config
         @resource = resource_extractor.find uuid: uuid
-        raise 'No metadata for ' + uuid if !@resource
-        resource_uri = mint_uri uuid, resource
-        @resource_uri = RDF::URI.new(resource_uri)
-        build_graph
+        if @resource
+          resource_uri = mint_uri uuid, resource
+          @resource_uri = RDF::URI.new(resource_uri)
+          build_graph
+        end
         @graph
       end
 

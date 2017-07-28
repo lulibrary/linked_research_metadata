@@ -10,7 +10,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
+      # @option config [Fixnum] :granularity Expand associated resource URIs with varying amounts of metadata.
       def initialize(config)
         super
       end

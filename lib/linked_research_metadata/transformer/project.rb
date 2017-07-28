@@ -11,7 +11,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
+      # @option config [Fixnum] :granularity Expand associated resource URIs with varying amounts of metadata.
       def initialize(config)
         super
       end
@@ -41,7 +41,6 @@ module LinkedResearchMetadata
             end
             if name
               person_uri = RDF::URI.new(mint_uri(uuid, :person))
-              minimal_person(person_uri, i) if @config[:resource_expansion] === :min
               if i.role == 'Principal Investigator'
                 role_uri = RDF::URI.new("#{vocab(:vivo)}PrincipalInvestigatorRole")
                 add_triple @resource_uri, role_uri, person_uri
@@ -50,6 +49,7 @@ module LinkedResearchMetadata
                 role_uri = RDF::URI.new("#{vocab(:vivo)}CoPrincipalInvestigatorRole")
                 add_triple @resource_uri, role_uri, person_uri
               end
+              minimal_person(person_uri, i) if @config[:granularity] > 0
             end
             # Phd Student
             # RA

@@ -4,9 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-## 0.2.0 - 2017-07-27
+## 0.2.0 - 2017-07-28
 ### Added
-- Levels of publishing.
+- Granularity control for associated resource URIs.
 - Identifiers available as a hash of sets.
 
 ## 0.1.1 - 2017-07-03

@@ -11,7 +11,7 @@ module LinkedResearchMetadata
       # @option config [String] :username The username of the Pure host account.
       # @option config [String] :password The password of the Pure host account.
       # @option config [String] :minting_uri The URI at which to mint a resource.
-      # @option config [Symbol] :resource_expansion Expand URI with varying amounts of resource metadata.
+      # @option config [Fixnum] :granularity Expand associated resource URIs with varying amounts of metadata.
       def initialize(config)
         super
       end
@@ -64,10 +64,9 @@ module LinkedResearchMetadata
 
           add_triple @resource_uri, RDF::Vocab::DC.hasPart, file_uri
 
-          minimal_file file_uri, i if @config[:resource_expansion] === :min
+          minimal_file file_uri, i if @config[:granularity] > 0
 
-          if @config[:resource_expansion] === :max
-            minimal_file file_uri, i
+          if @config[:granularity] > 1
 
             # license
             if i.license && i.license.url
@@ -96,13 +95,13 @@ module LinkedResearchMetadata
         @resource.projects.each do |i|
           @identifiers[:project] << i.uuid
           project_uri = RDF::URI.new(mint_uri(i.uuid, :project))
-          minimal_project project_uri, i  if @config[:resource_expansion] === :min
-          if @config[:resource_expansion] === :max && 1===2
+          add_triple @resource_uri, RDF::Vocab::DC.relation, project_uri
+          minimal_project project_uri, i  if @config[:granularity] > 0
+          if @config[:granularity] > 1
             transformer = make_transformer :project
             graph = transformer.transform uuid: i.uuid
             merge_graph graph if graph
           end
-          add_triple @resource_uri, RDF::Vocab::DC.relation, project_uri
         end
       end
 
@@ -115,8 +114,8 @@ module LinkedResearchMetadata
             @identifiers[:publication] << i.uuid
             publication_uri = RDF::URI.new(mint_uri(i.uuid, :publication))
           end
-          minimal_publication publication_uri, i if @config[:resource_expansion] === :min
           add_triple @resource_uri, RDF::Vocab::DC.relation, publication_uri
+          minimal_publication publication_uri, i if @config[:granularity] > 0
         end
       end
 
@@ -139,18 +138,18 @@ module LinkedResearchMetadata
             end
             if i.name
               person_uri = RDF::URI.new(mint_uri(uuid, :person))
-              minimal_person(person_uri, i) if @config[:resource_expansion] === :min
-              if i.uuid && @config[:resource_expansion] === :max
-                transformer = make_transformer :person
-                graph = transformer.transform uuid: uuid
-                merge_graph graph if graph
-                merge_identifiers transformer.identifiers
-              end
               if i.role == 'Creator'
                 add_triple @resource_uri, RDF::Vocab::DC.creator, person_uri
               end
               if i.role == 'Contributor'
                 add_triple @resource_uri, RDF::Vocab::DC.contributor, person_uri
+              end
+              minimal_person(person_uri, i) if @config[:granularity] > 0
+              if i.uuid && @config[:granularity] > 1
+                transformer = make_transformer :person
+                graph = transformer.transform uuid: uuid
+                merge_graph graph if graph
+                merge_identifiers transformer.identifiers
               end
             end
           end
